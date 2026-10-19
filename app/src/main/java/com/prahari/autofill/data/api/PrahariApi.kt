@@ -95,7 +95,11 @@ class PrahariApi(private val secureStorage: SecureStorage) {
 
     // ---------- Assigned audits ----------
     suspend fun getAudits(): Result<List<Audit>> {
-        val r = post("/backend/audit/list/")
+        // Pehle /backend/audit/list/ try karo, 404 aaye to assigned-audits try karo
+        var r = post("/backend/audit/list/")
+        if (r.isFailure && r.exceptionOrNull()?.message?.contains("404") == true) {
+            r = post("/backend/audit/assigned-audits/")
+        }
         return r.map { obj ->
             val arr = obj["audits"]?.jsonArray
                 ?: obj["data"]?.jsonArray
