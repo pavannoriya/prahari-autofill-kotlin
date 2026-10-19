@@ -104,17 +104,26 @@ class PrahariApi(private val secureStorage: SecureStorage) {
             val arr = obj["audits"]?.jsonArray
                 ?: obj["data"]?.jsonArray
                 ?: obj["results"]?.jsonArray
+                ?: obj["assigned_audits"]?.jsonArray
                 ?: emptyList()
             arr.mapNotNull { el ->
                 try {
                     val o = el.jsonObject
+                    fun str(vararg keys: String): String {
+                        for (k in keys) {
+                            o[k]?.jsonPrimitive?.contentOrNull?.let { if (it.isNotEmpty()) return it }
+                            // Number ho to string me convert karo
+                            o[k]?.jsonPrimitive?.intOrNull?.let { return it.toString() }
+                        }
+                        return ""
+                    }
                     Audit(
-                        id = o["id"]?.jsonPrimitive?.contentOrNull ?: o["audit_id"]?.jsonPrimitive?.contentOrNull ?: "",
-                        name = o["name"]?.jsonPrimitive?.contentOrNull ?: o["audit_name"]?.jsonPrimitive?.contentOrNull ?: "",
-                        branchId = o["branch_id"]?.jsonPrimitive?.contentOrNull ?: "",
-                        branchName = o["branch_name"]?.jsonPrimitive?.contentOrNull ?: "",
-                        startDate = o["start_date"]?.jsonPrimitive?.contentOrNull ?: "",
-                        endDate = o["end_date"]?.jsonPrimitive?.contentOrNull ?: ""
+                        id = str("id", "audit_id", "auditId", "auditID"),
+                        name = str("name", "audit_name", "auditName", "title"),
+                        branchId = str("branch_id", "branchId", "branchID"),
+                        branchName = str("branch_name", "branchName"),
+                        startDate = str("start_date", "startDate", "from_date"),
+                        endDate = str("end_date", "endDate", "to_date")
                     )
                 } catch (_: Exception) { null }
             }

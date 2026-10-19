@@ -57,15 +57,17 @@ fun ChatScreen() {
                 
                 // Step 2: Audit select karo (pehla available)
                 if (FillSession.auditId.isEmpty()) {
-                    addMsg(false, "🔍 Audit list le raha hun...")
+                    addMsg(false, "🔍 Assigned audits le raha hun...")
                     val audits = app.prahariApi.getAudits().getOrThrow()
-                    if (audits.isEmpty()) throw Exception("Koi audit nahi mila")
-                    val audit = audits.first()
+                    // Sirf valid audits (jisme id ho)
+                    val validAudits = audits.filter { it.id.isNotEmpty() }
+                    if (validAudits.isEmpty()) throw Exception("Koi audit nahi mila. Pehle Prahari me audit check karo — kya tumhare naam pe koi audit assigned hai?")
+                    val audit = validAudits.first()
                     FillSession.auditId = audit.id
-                    FillSession.auditName = audit.name
+                    FillSession.auditName = audit.name.ifEmpty { "Audit ${audit.id}" }
                     FillSession.branchId = audit.branchId
                     FillSession.branchName = audit.branchName
-                    addMsg(false, "📁 Audit: ${audit.name}")
+                    addMsg(false, "📁 Audit: ${FillSession.auditName} (Branch: ${audit.branchName.ifEmpty { audit.branchId }})")
                 }
                 
                 // Step 3: Center dhoondho
