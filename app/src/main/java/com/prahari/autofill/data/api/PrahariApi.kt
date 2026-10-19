@@ -101,25 +101,34 @@ class PrahariApi(private val secureStorage: SecureStorage) {
             r = post("/backend/audit/assigned-audits/")
         }
         return r.map { obj ->
-            val arr = obj["audits"]?.jsonArray
+            // Debug: response me kya keys hain
+            val keys = obj.keys.joinToString(",")
+            var arr = obj["audits"]?.jsonArray
                 ?: obj["data"]?.jsonArray
                 ?: obj["results"]?.jsonArray
                 ?: obj["assigned_audits"]?.jsonArray
+                // Koi bhi array dhoondho jo audit jaisa lage
+                ?: obj.values.firstOrNull { 
+                    try { it.jsonArray.isNotEmpty() } catch (_: Exception) { false }
+                }?.jsonArray
                 ?: emptyList()
-            arr.mapNotNull { el ->
+            // Agar pehla element object nahi hai, to skip karo
+            val audits = arr.mapNotNull { el ->
                 try {
                     val o = el.jsonObject
                     fun str(vararg keys: String): String {
                         for (k in keys) {
                             o[k]?.jsonPrimitive?.contentOrNull?.let { if (it.isNotEmpty()) return it }
-                            // Number ho to string me convert karo
                             o[k]?.jsonPrimitive?.intOrNull?.let { return it.toString() }
                         }
                         return ""
                     }
+                    val id = str("id", "audit_id", "auditId", "auditID")
+                    // ID nahi hai to ye audit nahi hai — sample keys note karo
+                    if (id.isEmpty()) return@mapNotNull null
                     Audit(
-                        id = str("id", "audit_id", "auditId", "auditID"),
-                        name = str("name", "audit_name", "auditName", "title"),
+                        id = id,
+                        name = str("name", "audit_name", "auditName", "title", "branch_name"),
                         branchId = str("branch_id", "branchId", "branchID"),
                         branchName = str("branch_name", "branchName"),
                         startDate = str("start_date", "startDate", "from_date"),
@@ -127,6 +136,11 @@ class PrahariApi(private val secureStorage: SecureStorage) {
                     )
                 } catch (_: Exception) { null }
             }
+            // Agar koi audit nahi mila to keys batao debug ke liye
+            if (audits.isEmpty()) {
+                throw Exception("Audit parse nahi hua. Response keys: $keys")
+            }
+            audits
         }
     }
 
