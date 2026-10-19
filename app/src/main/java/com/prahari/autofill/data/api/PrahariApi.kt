@@ -117,6 +117,34 @@ class PrahariApi(private val secureStorage: SecureStorage) {
         }
     }
 
+    // ---------- Selected centers for an audit ----------
+    suspend fun getSelectedCenters(auditId: String): Result<List<Center>> {
+        val r = post("/backend/audit/selected-centers/", mapOf("audit_id" to auditId))
+        return r.map { obj ->
+            val arr = obj["centers"]?.jsonArray
+                ?: obj["data"]?.jsonArray
+                ?: obj["results"]?.jsonArray
+                ?: emptyList()
+            arr.mapNotNull { el ->
+                try {
+                    val o = el.jsonObject
+                    Center(
+                        centerId = o["center_id"]?.jsonPrimitive?.contentOrNull
+                            ?: o["id"]?.jsonPrimitive?.contentOrNull ?: "",
+                        centerCode = o["center_code"]?.jsonPrimitive?.contentOrNull
+                            ?: o["centercode"]?.jsonPrimitive?.contentOrNull ?: "",
+                        centerName = o["center_name"]?.jsonPrimitive?.contentOrNull
+                            ?: o["centername"]?.jsonPrimitive?.contentOrNull ?: "",
+                        meetingDay = o["meeting_day"]?.jsonPrimitive?.contentOrNull ?: "",
+                        meetingTime = o["meeting_time"]?.jsonPrimitive?.contentOrNull ?: "",
+                        auditId = auditId,
+                        branchId = o["branch_id"]?.jsonPrimitive?.contentOrNull ?: ""
+                    )
+                } catch (_: Exception) { null }
+            }
+        }
+    }
+
     // ---------- Center risk details ----------
     suspend fun getCenterDetails(centerId: String, asOnDate: String): Result<JsonObject> =
         post("/backend/audit/centers/risk-details/", mapOf("center_id" to centerId, "as_on_date" to asOnDate))
