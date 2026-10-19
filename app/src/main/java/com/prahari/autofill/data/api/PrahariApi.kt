@@ -45,7 +45,8 @@ class PrahariApi(private val secureStorage: SecureStorage) {
                 val text = resp.body?.string() ?: ""
                 if (!resp.isSuccessful) return@withContext Result.failure(Exception("Login failed: ${resp.code}"))
                 val obj = json.parseToJsonElement(text).jsonObject
-                val token = obj["token"]?.jsonPrimitive?.contentOrNull
+                val token = obj["access_token"]?.jsonPrimitive?.contentOrNull
+                    ?: obj["token"]?.jsonPrimitive?.contentOrNull
                     ?: obj["access"]?.jsonPrimitive?.contentOrNull
                     ?: obj["jwt"]?.jsonPrimitive?.contentOrNull
                     ?: return@withContext Result.failure(Exception(obj["message"]?.jsonPrimitive?.contentOrNull ?: "Login failed"))
