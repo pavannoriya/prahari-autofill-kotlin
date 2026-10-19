@@ -155,7 +155,7 @@ class PrahariApi(private val secureStorage: SecureStorage) {
 
     // ---------- Member count (hamesha API se!) ----------
     suspend fun getMemberCount(centerId: String, asOnDate: String): Result<Int> {
-        val r = post("/backend/audit/centers/risk-details/", mapOf("center_id" to centerId, "as_on_date" to asOnDate))
+        val r = post("/backend/audit/customers/risk-details/", mapOf("center_id" to centerId, "as_on_date" to asOnDate))
         return r.map { obj ->
             obj["customer_risks"]?.jsonArray?.size
                 ?: obj["customers"]?.jsonArray?.size
